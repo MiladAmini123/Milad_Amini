@@ -1,0 +1,116 @@
+Laravel Beginner Lab
+
+Name: Milad Amini
+Student ID: Q01018070
+
+Task 1 - Prepare PHP and Composer
+
+I checked the PHP version using php -v.
+I also checked the Composer version using composer --version.
+PHP and Composer were available and ready to use.
+
+
+Task 2 - Create Laravel Project
+
+I opened Command Prompt and created a new Laravel 12 project.
+
+Project name:
+laravel-lab
+
+I entered the project folder and checked the Laravel version using:
+
+php artisan --version
+
+
+Task 3 - Create Home Page
+
+I created the following Blade view:
+
+resources/views/home.blade.php
+
+I added a simple HTML page with:
+- My name: Milad Amini
+- Course: Web Information Systems
+- A short introduction
+- A link to the About page
+
+
+Task 4 - Create Home Route
+
+I opened:
+
+routes/web.php
+
+I added a GET route for the home page (/).
+
+The route returns the home view and passes the course name
+"Web Information Systems" to the view.
+
+
+Task 5 - Run the Laravel Project
+
+I configured the session and cache settings in the .env file:
+
+SESSION_DRIVER=file
+CACHE_STORE=file
+
+Then I cleared the configuration and started the Laravel development server using:
+
+php artisan config:clear
+php artisan serve
+
+I opened the project in the browser at:
+
+http://127.0.0.1:8000
+
+
+Task 6 - Create About Page
+
+I created:
+
+resources/views/about.blade.php
+
+The page contains:
+
+Name: Milad Amini
+Student ID: Q01018070
+
+I also added two sentences about what I want to learn
+from the Web Information Systems course.
+
+A link was added to return to the home page.
+
+
+Task 7 - Add About Route
+
+I added a GET route for:
+
+/about
+
+The route returns the about view.
+
+The final routes include:
+- /
+- /about
+
+
+Testing
+
+I opened the home page in the browser and checked that it displayed correctly.
+
+I clicked the "About Me" link and checked the /about page.
+
+I also tested the "Back to Home" link.
+
+Both navigation links worked correctly.
+
+
+Result
+
+The Laravel beginner lab was completed with:
+- A Laravel 12 project
+- A home page
+- An About Me page
+- Two routes
+- Blade views
+- Navigation between the pages
