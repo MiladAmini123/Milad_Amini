@@ -1,0 +1,292 @@
+# IT Student Portal (Laravel 12 Authentication Lab)
+
+Name: Milad Amini
+Father name: Mohammad Nasim
+Class date: 19 October 2026
+
+## What I made
+A small student portal with Laravel. A user can register, log in,
+see a dashboard, and log out. Only logged-in users can open the dashboard.
+
+## How to run
+```bash
+composer create-project laravel/laravel it-auth-lab "^12.0"
+cd it-auth-lab
+```
+Edit `.env`:
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=it_auth_lab
+DB_USERNAME=root
+DB_PASSWORD=
+SESSION_DRIVER=file
+```
+Create an empty database named `it_auth_lab` in phpMyAdmin, then:
+```bash
+php artisan config:clear
+php artisan migrate
+php artisan make:controller AuthController
+php artisan serve
+```
+
+## Files
+- routes/web.php - routes for register, login, dashboard, logout
+- app/Http/Controllers/AuthController.php - register, login, logout methods
+- resources/views/auth/register.blade.php - register form
+- resources/views/auth/login.blade.php - login form
+- resources/views/dashboard.blade.php - dashboard page
+
+### routes/web.php
+```php
+<?php
+
+use App\Http\Controllers\AuthController;
+use Illuminate\Support\Facades\Route;
+
+Route::redirect('/', '/login');
+
+// Only visitors who are not signed in
+Route::middleware('guest')->group(function () {
+    Route::view('/register', 'auth.register')->name('register');
+    Route::post('/register', [AuthController::class, 'register'])
+        ->name('register.store');
+
+    Route::view('/login', 'auth.login')->name('login');
+    Route::post('/login', [AuthController::class, 'login'])
+        ->name('login.store');
+});
+
+// Only signed-in users
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
+    Route::post('/logout', [AuthController::class, 'logout'])
+        ->name('logout');
+});
+```
+
+### app/Http/Controllers/AuthController.php
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+
+class AuthController extends Controller
+{
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        // create the user
+        $user = new User();
+        $user->name = $data['name'];
+        $user->email = $data['email'];
+        $user->password = Hash::make($data['password']);
+        $user->save();
+
+        return redirect()->route('login')->with('success', 'Account created. Please log in.');
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        $accepted = Auth::attempt($credentials);
+
+        if (! $accepted) {
+            return back()->withErrors([
+                'email' => 'Email or password is incorrect.',
+            ])->onlyInput('email');
+        }
+
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('dashboard'));
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
+    }
+}
+```
+
+### resources/views/auth/register.blade.php
+```blade
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register - IT Student Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; padding: 40px 16px; }
+        .box { max-width: 380px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+        label { display: block; margin-top: 12px; font-size: 14px; }
+        input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+        button { margin-top: 16px; padding: 9px 16px; background: #1f4e8c; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+        .errors { color: #b00020; padding-left: 18px; }
+        .success { color: #1b7a3a; }
+        a { color: #1f4e8c; display: inline-block; margin-top: 14px; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>Create an account</h1>
+
+    @if ($errors->any())
+        <ul class="errors">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    @endif
+
+    @if (session('success'))
+        <p class="success">{{ session('success') }}</p>
+    @endif
+
+    <form method="POST" action="{{ route('register.store') }}">
+        @csrf
+
+        <label for="name">Full name</label>
+        <input id="name" name="name" type="text" value="{{ old('name') }}" required>
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" value="{{ old('email') }}" required>
+
+        <label for="password">Password (at least 8 characters)</label>
+        <input id="password" name="password" type="password" minlength="8" required>
+
+        <label for="password_confirmation">Confirm password</label>
+        <input id="password_confirmation" name="password_confirmation" type="password" minlength="8" required>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <a href="{{ route('login') }}">Already have an account?</a>
+</div>
+</body>
+</html>
+```
+
+### resources/views/auth/login.blade.php
+```blade
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - IT Student Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; padding: 40px 16px; }
+        .box { max-width: 380px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+        label { display: block; margin-top: 12px; font-size: 14px; }
+        input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+        button { margin-top: 16px; padding: 9px 16px; background: #1f4e8c; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+        .errors { color: #b00020; padding-left: 18px; }
+        .success { color: #1b7a3a; }
+        a { color: #1f4e8c; display: inline-block; margin-top: 14px; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>Login</h1>
+
+    @if ($errors->any())
+        <ul class="errors">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    @endif
+
+    @if (session('success'))
+        <p class="success">{{ session('success') }}</p>
+    @endif
+
+    <form method="POST" action="{{ route('login.store') }}">
+        @csrf
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" value="{{ old('email') }}" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <a href="{{ route('register') }}">Create a new account</a>
+</div>
+</body>
+</html>
+```
+
+### resources/views/dashboard.blade.php
+```blade
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard - IT Student Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; padding: 40px 16px; }
+        .box { max-width: 380px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+        button { margin-top: 16px; padding: 9px 16px; background: #1f4e8c; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>IT Student Portal</h1>
+    <p>Welcome, {{ auth()->user()->name }}.</p>
+    <p>Email: {{ auth()->user()->email }}</p>
+
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit">Logout</button>
+    </form>
+</div>
+</body>
+</html>
+```
+
+## How it works
+- Register: the data is validated (email must be unique, password at
+  least 8 characters and confirmed). The password is saved with Hash::make().
+- Login: Auth::attempt() checks the email and password. If it is correct,
+  the session is regenerated and the user goes to the dashboard.
+- Dashboard: it uses the auth middleware, so a logged-out user is sent
+  to the login page.
+- Logout: the session is invalidated and the user goes back to login.
+
+## Answers
+1. Hash::make() is used so the password is not saved as plain text.
+2. The auth middleware checks if the user is logged in. If not, it
+   redirects to the login page.
+3. @csrf adds a hidden token to the form to protect it from fake requests.
+
+## Testing
+(I will write my test results here after I run the project.)
