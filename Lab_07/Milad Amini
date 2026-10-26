@@ -1,0 +1,97 @@
+Book Registration and Viewing — Laravel Lab
+
+Name: Milad Amini
+Father Name: Mohammad Nasim
+Department: Computer Science / IT
+Date: 26 October 2026
+
+1. Introduction
+
+In this lab, I continued my previous Laravel 12 project. I added a book registration form to the student portal. Users can enter the book title, author name, and number of pages. After registering a book, it appears in the My Books table on the dashboard.
+
+Each user can see only the books registered under their own account.
+
+2. Files Used
+
+- "app/Models/Book.php"
+- "app/Http/Controllers/BookController.php"
+- "database/migrations/create_books_table.php"
+- "routes/web.php"
+- "resources/views/dashboard.blade.php"
+
+3. Database
+
+I created the Book model and migration using:
+
+php artisan make:model Book -m
+
+The books table contains the following fields:
+
+- "id": Primary key
+- "user_id": ID of the user who registered the book
+- "title": Book title
+- "author": Author name
+- "pages": Number of pages
+- "created_at" and "updated_at": Record timestamps
+
+I used a foreign key for "user_id" to connect each book with a user in the users table.
+
+After editing the migration, I ran:
+
+php artisan migrate
+
+4. Book Registration
+
+I created the "BookController" to handle book registration and display.
+
+The form accepts three inputs: title, author, and pages. Laravel validates the inputs before saving the book. The title can contain up to 150 characters, the author name up to 100 characters, and the number of pages must be between 1 and 10,000.
+
+I used "Auth::id()" to get the ID of the logged-in user and save it with the book.
+
+5. Displaying Books
+
+I updated the dashboard to include a book registration form and a My Books table.
+
+The table displays the book number, title, author, and pages. I used the "index()" method in "BookController" to retrieve the logged-in user's books and show the newest records first.
+
+If the user has not registered any books, the dashboard displays a message saying that no books have been registered yet.
+
+I also added Bootstrap to make the form and table easier to use.
+
+6. Routes
+
+I updated "routes/web.php" and added these routes inside the authentication middleware group:
+
+Route::get('/dashboard', [BookController::class, 'index'])
+    ->name('dashboard');
+
+Route::post('/books', [BookController::class, 'store'])
+    ->name('books.store');
+
+I replaced the previous dashboard route and kept the existing login and logout routes.
+
+7. Security and Validation
+
+I used the "auth" middleware to protect the dashboard and book registration route.
+
+I also used "@csrf" in the form to protect against forged requests. Laravel validation displays errors when the entered data is incorrect. The previous input is restored using "old()".
+
+The user ID is obtained from the authenticated session instead of accepting it from the form.
+
+8. Testing
+
+I will check the following after running the project:
+
+1. Register a book named Learning PHP by Sara Ahmad with 120 pages.
+2. Register a book named Laravel Basics by Ali Hassan with 180 pages.
+3. Check that both books appear in the table.
+4. Refresh the page and check that the books remain saved.
+5. Enter invalid data and check the validation messages.
+6. Log in with another account and check that the first user's books are not displayed.
+7. Log out and check that the dashboard requires login.
+
+Test results: To be completed after testing the project.
+
+9. Conclusion
+
+In this lab, I extended my previous Laravel project by adding book registration and viewing. I practiced creating a database table, using a model and controller, validating form data, and displaying records on an authenticated dashboard. This lab also helped me understand how to associate records with individual users in Laravel.
